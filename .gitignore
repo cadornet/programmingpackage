@@ -1,0 +1,6 @@
+.Rproj.user
+inst/doc
+/doc/
+/Meta/
+inst/extdata/filtered_feature_bc_matrix/
+inst/extdata/*.gtf
