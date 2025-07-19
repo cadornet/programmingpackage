@@ -1,0 +1,133 @@
+---
+title: "Analysis Steps"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analysis Steps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+
+library(Seurat)
+library(programmingpackage)
+library(SingleR)
+library(celldex)
+library(SummarizedExperiment)
+```
+
+## Step 0: Load data
+
+I loaded the raw single-cell dataset and and created a Seurat object using the 10X files.
+
+```{r step0}
+data_dir <- system.file("extdata/filtered_feature_bc_matrix", package = "programmingpackage")
+gtf_path <- system.file("extdata/Homo_sapiens.GRCh38.111.gtf", package = "programmingpackage")
+
+sc_data <- Read10X(data.dir = data_dir)
+seurat_obj <- CreateSeuratObject(counts = sc_data)
+```
+## Step 1: Filter protein-coding genes
+
+I filtered the dataset using the GTF file to retain only protein-coding genes.
+
+```{r step1}
+seurat_obj <- select_protein_coding_genes(seurat_obj, gtf_path)
+```
+
+## Step 2: Gene Expression Summary
+
+I calculated the number of genes with expression ≥3 UMIs for each cell
+
+```{r step2}
+seurat_obj <- summarize_expression_umi3_exact(seurat_obj)
+```
+
+```{r show-violinplot, echo = FALSE}
+knitr::include_graphics("images/violinplot_umi3.png")
+```
+
+## Step 3: Filter unwanted genes
+
+I removed unwanted gene categories from the dataset -like ribosomal, mithocondrial and pseudogenes
+
+```{r step3}
+seurat_obj <- filter_unwanted_genes(seurat_obj)
+removed_table <- read.table(
+  system.file("extdata/my_removed_genes.txt", package = "programmingpackage"),
+  header = TRUE, sep = "\t"
+)
+knitr::kable(removed_table, caption = "Number of removed genes by category")
+```
+
+## Step 4: PCA
+
+```{r step4}
+result_pca <- run_pca_variance_plot(seurat_obj)
+seurat_obj <- result_pca$seurat_obj
+```
+
+```{r show-pca, echo = FALSE}
+knitr::include_graphics("images/pca_20PC.png")
+```
+
+## Step 5: UMAP
+
+```{r step5}
+result_umap <- run_umap_plot(seurat_obj, dims = 1:10)
+seurat_obj <- result_umap$seurat_obj
+```
+
+```{r show-umap, echo = FALSE}
+knitr::include_graphics("images/umap_10PC.png")
+```
+
+## Step 6: Clustering
+
+I performed clustering on the dataset to identify groups of transcriptionally similar cells.
+
+```{r step6}
+result_cluster <- run_clustering(seurat_obj, dims = 1:10, resolution = 0.5)
+seurat_obj <- result_cluster$seurat_obj
+```
+
+```{r show-clustering, echo = FALSE}
+knitr::include_graphics("images/umap_clusters_res05.png")
+```
+
+## Step 7: Cell Type Annotation
+
+Assign a cell type for each cell
+
+```{r step7}
+result_annot <- annotate_cells_singleR(seurat_obj)
+seurat_obj <- result_annot$seurat_obj
+```
+
+```{r show-annotation, echo = FALSE}
+knitr::include_graphics("images/umap_celltypes_SingleR.png")
+```
+
+## Step 8: Tissue Origin Inference
+
+Based on the annotation results obtained using SingleR and the Human Primary Cell Atlas reference,  
+I think that the dataset is enriched in hematopoietic and immune cell types.  
+The most frequent annotations include:
+
+- T cells
+- B cells
+- Natural killer (NK) cells
+- Monocytes
+- Neutrophils
+- Platelets
+- CD34+ and CD34- hematopoietic stem cells
+
+This cellular composition is highly indicative of a hematopoietic tissue, with both differentiated immune populations and stem/progenitor compartments.  
+As a result, I hypothesize that the tissue of origin is most likely **bone marrow**.
