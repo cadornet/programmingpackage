@@ -57,6 +57,36 @@ annot_result <- annotate_cells_singleR(cluster_result$seurat_obj)
 ## Vignette
 A complete step-by-step explanation of the analysis is available [here](https://github.com/cadornet/programmingpackage/blob/main/docs/analysis_steps.html).
 
+## Docker Support
+This project also includes a ready-to-use Docker Container to ensure reproducility and compatibility
+The **Dockerfile** used to build the container is included in this repository and installs all required system and R dependencies, including:
+Seurat
+rtracklayer
+SingleR
+celldex
+SummarizedExperiment
+ggplot2, and others
+### Build the Docker Image
+To build the Docker image:
+```bash
+docker build -t programmingpackage .
+```
+To start an interactive R session inside the container:
+```bash
+docker run -it programmingpackage
+```
+Once inside, load the package and start using its functions:
+```r
+library(programmingpackage)
+?select_protein_coding_genes
+```
+
+
+
+
+
+
+
 ## License
 MIT © 2025 Chiara Adornetto
 
