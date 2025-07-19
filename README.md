@@ -81,7 +81,7 @@ library(programmingpackage)
 ?select_protein_coding_genes
 ```
 
-##Docker Image
+## Docker Image
 To ensure reproducibility, the entire analysis pipeline is also available as a Docker image.
 You can pull and run the container from Docker Hub:
 ```bash
