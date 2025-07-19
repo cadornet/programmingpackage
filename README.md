@@ -81,7 +81,15 @@ library(programmingpackage)
 ?select_protein_coding_genes
 ```
 
-
+##Docker Image
+To ensure reproducibility, the entire analysis pipeline is also available as a Docker image.
+You can pull and run the container from Docker Hub:
+```bash
+docker pull chiara9/programmingpackage
+docker run -it chiara9/programmingpackage
+```
+This image includes all necessary dependencies, R packages (such as Seurat, SingleR, rtracklayer, etc.), and the custom R package programmingpackage used in this project.
+🔗 Docker Hub Link: https://hub.docker.com/r/chiara9/programmingpackage
 
 
 
