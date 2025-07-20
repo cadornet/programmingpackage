@@ -53,7 +53,18 @@ seurat_obj <- umap_result$seurat_obj
 # Clustering and annotation --> Performe clustering on the dataset to identify groups of transcriptionally similar cells.
 cluster_result <- run_clustering(seurat_obj)
 annot_result <- annotate_cells_singleR(cluster_result$seurat_obj)
+
+# Infer Tissue of Origin --> Based on the most abundant predicted cell types and the cluster structure, infer the tissue from which the dataset likely originates. The result is saved as a human-readable summary.
+
+tissue_result <- infer_tissue_origin(annot_result$seurat_obj)
+
+# View the guessed tissue origin
+cat(tissue_result$tissue_guess)
+
+# The full interpretation is saved in:
+# tissue_origin_inference_summary.txt
 ```
+
 ## Vignette
 A complete step-by-step explanation of the analysis is available [here](https://github.com/cadornet/programmingpackage/blob/main/docs/analysis_steps.html).
 
