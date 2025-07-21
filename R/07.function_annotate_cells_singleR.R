@@ -23,10 +23,10 @@ annotate_cells_singleR <- function(seurat_obj,
                                    save_path = "umap_celltypes_SingleR.png") {
   expr_matrix <- Seurat::GetAssayData(seurat_obj, slot = "data")
   
-  # Carica reference
+e
   hpca <- celldex::HumanPrimaryCellAtlasData()
   
-  # Annotazione
+ 
   singleR_results <- SingleR::SingleR(test = expr_matrix,
                                       ref = hpca,
                                       labels = hpca$label.main)
@@ -39,7 +39,7 @@ annotate_cells_singleR <- function(seurat_obj,
   
   ggplot2::ggsave(save_path, plot = umap_plot, width = 8, height = 6)
   
-  # Tabella contingenza
+
   confusion <- table(Cluster = Seurat::Idents(seurat_obj),
                      CellType = seurat_obj$SingleR_label)
   
