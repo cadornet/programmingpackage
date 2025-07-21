@@ -24,7 +24,7 @@ devtools::install_github("cadornet/programmingpackage")
 
 
 ## Example Workflow
-suggestion --> A deeper and more detailed explanation of each function including can be found [here](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.Rmd)[html](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.html?raw=true)
+suggestion --> A deeper and more detailed explanation of each function including can be found [here](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.Rmd)
 
 ```r
 library(programmingpackage)
