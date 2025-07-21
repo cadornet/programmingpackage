@@ -32,7 +32,7 @@ filter_unwanted_genes <- function(seurat_obj,
   genes_to_remove <- unique(c(ribosomal_genes, mitochondrial_genes, pseudogenes))
   filtered_seurat <- subset(seurat_obj, features = setdiff(gene_names, genes_to_remove))
 
-  # Salva output
+  
   write.table(genes_to_remove, out_list_file, row.names = FALSE, quote = FALSE, col.names = FALSE)
   write.table(removed_genes, out_summary_file, row.names = FALSE, quote = FALSE, sep = "\t")
 
