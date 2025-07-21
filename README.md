@@ -2,7 +2,8 @@
 
 This repository contains the instructions to complete a single-cell RNA-seq analysis pipeline using **Seurat** and **SingleR**.  
 It includes functions for filtering protein-coding genes, excluding unwanted features, computing PCA/UMAP, clustering, and annotating cell types with external references.  
-The project provides a complete R package with modular functions needed to perform the full analysis described in [this vignette](https://github.com/cadornet/programmingpackage/blob/main/docs/analysis_steps.html).
+The project provides a complete R package with modular functions needed to perform the full analysis described in [Correct Vignette Analysis Steps](https://cadornet.github.io/programmingpackage/correct_vignette_analysis_steps.html)
+
 
 ## Installation
 
