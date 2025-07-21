@@ -1,0 +1,313 @@
+---
+title: "Detailed explanation of the functions used"
+author: "Chiara Adornetto"
+date: "2025-07-21"
+output: html_document
+---
+1. Function select_protein_coding_genes.
+This function filters a Seurat object to retain only protein-coding genes based on a GTF annotation file.
+```{r step1}
+#' @param seurat_obj A Seurat object created from 10X data
+#' @param gtf_path Path to the GTF annotation file (e.g., from Ensembl)
+#' @return A filtered Seurat object containing only protein-coding genes
+#' @export
+#'
+#' @importFrom rtracklayer import
+#' @import Seurat
+select_protein_coding_genes <- function(seurat_obj, gtf_path) {
+  if (!requireNamespace("rtracklayer", quietly = TRUE)) {
+    stop("Package 'rtracklayer' is required but not installed.")
+  } #Define the function and its inputs, checks if the package rtracklayer is installed, if not it gives you an error message
+
+  genes_gtf <- rtracklayer::import(gtf_path, format = "gtf", feature.type = "gene")
+  protein_coding_genes <- genes_gtf[genes_gtf$gene_biotype == "protein_coding"]
+  keep_gene_names <- protein_coding_genes$gene_name #Imports only “gene” rows from the gtf file into a granges object using rtrackayer, filters the genes where gene_biotype==”protein_coding” and extracts the gene names to retain
+
+  filtered_seurat <- subset(seurat_obj, features = keep_gene_names)
+  return(filtered_seurat)
+} #Filter the seurat object to keep only those genes and return the filtered seurat object
+```
+ 2. Function summarize_expression_umi3_exact.
+ This function calculates the number of genes with UMI ≥3 per cell and plots a violin plot.
+ 
+```{r step2}
+#' @param seurat_obj A Seurat object
+#' @param feature_name Name of metadata column to store (default: "n_genes_≥3UMI")
+#' @param save_path Path to save the violin plot (default: "violinplot_umi3.png")
+#'
+#' @return A Seurat object with the new metadata column
+#' @export
+#'
+#' @importFrom Seurat GetAssayData VlnPlot
+#' @import ggplot2
+summarize_expression_umi3_exact <- function(seurat_obj,
+                                            feature_name = "n_genes_≥3UMI",
+                                            save_path = "violinplot_umi3.png") { #Defines the function. It takes the seurat object, the name of the new metadata column and where to save the violinplot
+  counts <- Seurat::GetAssayData(seurat_obj, layer = "counts") #Extracts the umi count matrix from the seurat object
+
+
+  counts_mat <- as.matrix(counts) #converts the sparse matrix into a dense matrix which is better to ensure compatibility with logical operation that is then performed
+  genes_above_3 <- colSums(counts_mat >= 3) #For each cell, counts how many gene have expression >3
+
+  seurat_obj[[feature_name]] <- genes_above_3 #Adds the results as a new metadata column to the seurat object
+
+  p <- Seurat::VlnPlot(seurat_obj, features = feature_name) +
+    ggplot2::ggtitle("Number of genes with expression ≥3 UMIs")
+
+  ggplot2::ggsave(save_path, plot = p, width = 6, height = 4) #Generates a violin plot with a custom title, saves as png file and returns the updates seurat object
+
+  return(seurat_obj)
+}
+```
+3. Function filter_unwanted_genes.
+This function removes ribosomal genes, ribosomal pseudogenes, and mitochondrial genes from a Seurat object
+```{r step3}
+#' @param seurat_obj A Seurat object
+#' @param out_list_file Path to save the list of removed gene names (default: "removed_genes_list.txt")
+#' @param out_summary_file Path to save a summary table of removed genes by category (default: "removed_genes_summary.txt")
+#'
+#' @return A filtered Seurat object
+#' @export
+#'
+#' @import Seurat
+filter_unwanted_genes <- function(seurat_obj,
+                                  out_list_file = "removed_genes_list.txt",
+                                  out_summary_file = "removed_genes_summary.txt") { #Defines the function which accept: seurat object to filter, out_list_file is the name of the file where to store the removed genes list, out_summary_file is the name of the file where to save summary table.
+  gene_names <- rownames(seurat_obj) #Extracts the gene names from the expression matrix che sono le rows
+  ribosomal_genes <- grep("^RPS|^RPL", gene_names, value = TRUE)
+  mitochondrial_genes <- grep("^MT-", gene_names, value = TRUE)
+  pseudogenes <- grep("RPS.*P|RPL.*P", gene_names, value = TRUE) #using grep, which is a string-matching function used to identify elements, in this case based on their iniziali, it finds ribosomal, mito, or presudogenes 
+  removed_genes <- data.frame(
+    Categories = c("Ribosomal", "Mitochondrial", "Pseudogenes"),
+    N_removed_genes = c(
+      length(ribosomal_genes),
+      length(mitochondrial_genes),
+      length(pseudogenes)
+    )
+  ) #creates a summary table with the number of removed genes in each category
+ genes_to_remove <- unique(c(ribosomal_genes, mitochondrial_genes, pseudogenes)) #merges all removed genes into a single list 
+filtered_seurat <- subset(seurat_obj, features = setdiff(gene_names, genes_to_remove)) #filters the seurat object to exclude the unwanted genes using setdiff, che prende a togliendo b
+write.table(genes_to_remove, out_list_file, row.names = FALSE, quote = FALSE, col.names = FALSE)
+write.table(removed_genes, out_summary_file, row.names = FALSE, quote = FALSE, sep = "\t")
+print(removed_genes)
+ return(filtered_seurat)
+}
+```
+4. Function run_pca_variance_plot.
+This function normalizes, scales, and runs PCA on a Seurat object. It then computes the percentage of variance explained by the first 20 principal components and generates a barplot, which is saved as a PNG file.
+```{r step4}
+#' @param seurat_obj A Seurat object 
+#' @param filename Name of the PNG file to save the plot (default: "pca_20PC.png") 
+#' @return A list containing: #' \describe{ #' \item{seurat_obj}{The Seurat object with PCA results} 
+#' \item{pca_var_perc}{Vector with percentage variance explained per PC} 
+#' \item{pca_var_cumsum}{Vector with cumulative variance explained} 
+#' } 
+#' @export 
+#' 
+#' @importFrom Seurat NormalizeData FindVariableFeatures ScaleData RunPCA VariableFeatures
+ run_pca_variance_plot <- function(seurat_obj, filename ="pca_20PC.png") {
+seurat_obj <- Seurat::NormalizeData(seurat_obj) 
+seurat_obj <- Seurat::FindVariableFeatures(seurat_obj) 
+seurat_obj <- Seurat::ScaleData(seurat_obj) 
+seurat_obj <- Seurat::RunPCA(seurat_obj, features =
+ Seurat::VariableFeatures(seurat_obj)) #step prima di PCA:Normalize expression,Select variable genes, Scale the data, Run PCA on selected features.
+pca_var <- seurat_obj[["pca"]]@stdev^2 
+pca_var_perc <- pca_var / sum(pca_var) * 100
+ pca_var_cumsum <- cumsum(pca_var_perc) 
+# generates and saves a barplot
+png(filename = filename, width = 800, height = 600) 
+barplot(pca_var_perc[1:20], 
+names.arg = 1:20, 
+xlab = "Principal Component", 
+ylab = "Percent Variance Explained", 
+main = "PCA - Explained Variance (first 20 PCs)") 
+dev.off() 
+return(list(
+ seurat_obj = seurat_obj, 
+pca_var_perc = pca_var_perc, 
+pca_var_cumsum = pca_var_cumsum 
+)) 
+}
+```
+5. Function run_umap_plot This function runs UMAP on the provided Seurat object using the specified PCA dimensions,
+generates a UMAP plot and saves it as a PNG file.
+```{r step5}
+#' @param seurat_obj A Seurat object that has already undergone PCA
+#' @param dims Numeric vector of PCA dimensions to use (default: 1:10)
+#' @param save_path File path to save the UMAP plot (default: "umap_10PC.png")
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{seurat_obj}{The Seurat object with UMAP embedding}
+#'   \item{plot}{The ggplot2 object of the UMAP plot}
+#' }
+#' @export
+#'
+#' @importFrom Seurat RunUMAP DimPlot
+#' @import ggplot2
+#Defines seurat obj with pca performed, dims numeri vector with pc to use, save path where to store the graph. Calcola la riduzione umap sull’oggetto seurat usando le componenti pca specificate
+run_umap_plot <- function(seurat_obj,
+                          dims = 1:10,
+                          save_path = "umap_10PC.png") {
+  seurat_obj <- Seurat::RunUMAP(seurat_obj, dims = dims)
+  
+  umap_plot <- Seurat::DimPlot(seurat_obj, reduction = "umap") +
+    ggplot2::ggtitle(sprintf("UMAP based on first %d PCA components", max(dims))) #Generates the UMAP plot with a dynamic title (e.g., “based on first 10 PCA components”
+  
+  ggplot2::ggsave(save_path, plot = umap_plot, width = 7, height = 5)
+  
+  return(list(
+    seurat_obj = seurat_obj,
+    plot = umap_plot
+  ))
+}
+
+```
+6. Function run_clustering. 
+This function runs clustering on a Seurat object using the specified PCA dimensions and resolution, plots the resulting clusters on a UMAP embedding, and saves the plot.
+```{r step6}
+#' @param seurat_obj A Seurat object with PCA and UMAP already computed
+#' @param dims PCA dimensions to use for clustering (default: 1:10)
+#' @param resolution Clustering resolution parameter (default: 0.5)
+#' @param save_path Path to save the UMAP cluster plot (default: "umap_clusters_res05.png")
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{seurat_obj}{The Seurat object with clustering information}
+#'   \item{plot}{The UMAP plot with clusters}
+#'   \item{cluster_table}{A table with number of cells per cluster}
+#' }
+#' @export
+#'
+#' @importFrom Seurat FindNeighbors FindClusters DimPlot Idents
+#' @import ggplot2
+#Function definition:	seurat_obj: Seurat object with PCA and UMAP already done,dims: PCA dimensions to use for clustering, resolution: clustering granularity,save_path: filename for the output UMAP plot
+run_clustering <- function(seurat_obj,
+                           dims = 1:10,
+                           resolution = 0.5,
+                           save_path = "umap_clusters_res05.png") {
+  seurat_obj <- Seurat::FindNeighbors(seurat_obj, dims = dims)
+  seurat_obj <- Seurat::FindClusters(seurat_obj, resolution = resolution) #Builds the neighbor graph between cells based on selected PCA components. Applies graph-based clustering
+  
+  cluster_plot <- Seurat::DimPlot(seurat_obj, reduction = "umap", label = TRUE) +
+    ggplot2::ggtitle(sprintf("Cellular clusters (resolution %.2f)", resolution)) #crea a UMAP plot where cells are colored by cluster
+  
+  ggplot2::ggsave(save_path, plot = cluster_plot, width = 7, height = 5)
+  
+  cluster_table <- table(Seurat::Idents(seurat_obj)) #Computes how many cells are in each cluster.
+  
+  return(list(
+    seurat_obj = seurat_obj,
+    plot = cluster_plot,
+    cluster_table = cluster_table
+  ))
+}
+```
+7. function annotate_cells_singleR.
+This function annotates cells in a Seurat object using SingleR and the Human Primary Cell Atlas reference. It stores the predicted labels in the metadata, plots a UMAP with labels, and saves it.
+```{r step7}
+#' @param seurat_obj A Seurat object
+#' @param save_path File path to save the UMAP plot (default: "umap_celltypes_SingleR.png")
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{seurat_obj}{The Seurat object with SingleR labels added}
+#'   \item{plot}{The UMAP plot grouped by predicted cell type}
+#'   \item{confusion_table}{Contingency table of clusters vs. predicted labels}
+#' }
+#' @export
+#'
+#' @importFrom Seurat GetAssayData DimPlot Idents
+#' @importFrom celldex HumanPrimaryCellAtlasData
+#' @importFrom SingleR SingleR
+#' @importFrom SummarizedExperiment SummarizedExperiment
+#' @import ggplot2
+#function definitio wirh seuratobj, save path for UMAP plot
+annotate_cells_singleR <- function(seurat_obj,
+                                   save_path = "umap_celltypes_SingleR.png") {
+  expr_matrix <- Seurat::GetAssayData(seurat_obj, slot = "data")#extracts the normalized expression matrix from the seuratobj 
+  
+  #loads the human primary cells atlas reference dataset which includes gene expression profile for know human celll types
+  hpca <- celldex::HumanPrimaryCellAtlasData()
+  
+  #compare each test cell to reference cell types in HPCA and assigns the most probabile cell type label based on similarity
+  singleR_results <- SingleR::SingleR(test = expr_matrix,
+                                      ref = hpca,
+                                      labels = hpca$label.main)
+  
+  seurat_obj$SingleR_label <- singleR_results$labels #stores the predicted cell types from singleR into the seurat obj metadata in a new column
+  #umap plot coloratissimo wich colors cells by predicted cell type
+  umap_plot <- Seurat::DimPlot(seurat_obj, group.by = "SingleR_label", label = TRUE) +
+    ggplot2::ggtitle("Cell type annotations (SingleR)")
+  
+  ggplot2::ggsave(save_path, plot = umap_plot, width = 8, height = 6)
+  
+  #contingency table with rows that indicates seurat clusters, col that indicated predicted cell types and values which means number of cell per cluster x cell type combination. praticamente this table helps to evaluete how well clusters match know cel type
+  confusion <- table(Cluster = Seurat::Idents(seurat_obj),
+                     CellType = seurat_obj$SingleR_label)
+  
+  return(list(
+    seurat_obj = seurat_obj,
+    plot = umap_plot,
+    confusion_table = confusion
+  ))
+}
+```
+8. infer_tissue_origin
+function his function analyzes the most abundant cell types predicted by SingleR and proposes a tissue of origin based on common marker patterns.
+```{r step}
+#' @param seurat_obj A Seurat object with SingleR annotations (SingleR_label)
+#' @param output_file Path to save the output text file (default: "tissue_origin_inference_summary.txt")
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{tissue_guess}{The inferred tissue of origin}
+#'   \item{celltype_counts}{The table of predicted cell types}
+#'   \item{text}{The inference summary as character}
+#' }
+#' @export
+#defines the function with seuratobj and the outputfile
+infer_tissue_origin <- function(seurat_obj, output_file = "tissue_origin_inference_summary.txt") {
+  # Extract cell types and cluster IDs
+  cell_types <- seurat_obj$SingleR_label
+  cluster_ids <- Idents(seurat_obj)
+  #extract cellular type predicted by singleR from the singleR column of seuratobj
+  celltype_counts <- sort(table(cell_types), decreasing = TRUE)
+  top_labels <- names(celltype_counts)[1:3] #counts how many cell are assigned to each type, sort ordina from the most abundant to less abundant, toplabels takes the 3 most frequent cellular type
+  
+  #usa grep per cercare nei tipi cellulari più abbondanti parole chiave indicative del tessuto e tissueguess è aggiornato con descrizione biologicamente plausibile per il tessuto di origine
+  tissue_guess <- "Unknown"
+  if (any(grepl("T cell|B cell|NK cell", top_labels))) {
+    tissue_guess <- "Blood or lymphoid tissue"
+  } else if (any(grepl("Epithelial", top_labels))) {
+    tissue_guess <- "Epithelial tissue (e.g. gut, skin, lung)"
+  } else if (any(grepl("Neural", top_labels))) {
+    tissue_guess <- "Neural tissue"
+  } else if (any(grepl("Fibroblast|Endothelial", top_labels))) {
+    tissue_guess <- "Connective or stromal tissue"
+  }
+  
+  # output. it creates a string with the most 5 frequen cellular types, the interfered tessue and a final quote that giusify the interference
+  output_text <- paste0(
+    "### Tissue Origin Inference\n\n",
+    "Top predicted cell types:\n",
+    paste0(" - ", names(head(celltype_counts, 5)), ": ", head(celltype_counts, 5), collapse = "\n"),
+    "\n\nInferred tissue of origin:\n",
+    "**", tissue_guess, "**\n\n",
+    "This hypothesis is based on the frequency of annotated cell types and the cluster structure observed in the UMAP."
+  )
+  
+  # Save to file
+  writeLines(output_text, con = output_file)
+  cat("✅ Tissue inference saved to", output_file, "\n")
+  
+  # Return structured output
+  return(list(
+    tissue_guess = tissue_guess,
+    celltype_counts = celltype_counts,
+    text = output_text
+  ))
+}
+
+
+
