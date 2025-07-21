@@ -16,18 +16,18 @@ summarize_expression_umi3_exact <- function(seurat_obj,
                                             feature_name = "n_genes_≥3UMI",
                                             save_path = "violinplot_umi3.png") {
   counts <- Seurat::GetAssayData(seurat_obj, layer = "counts")
-  
-  # ⚠️ Convertiamo in matrice per usare colSums (come nello script)
+
+
   counts_mat <- as.matrix(counts)
   genes_above_3 <- colSums(counts_mat >= 3)
-  
+
   seurat_obj[[feature_name]] <- genes_above_3
-  
+
   p <- Seurat::VlnPlot(seurat_obj, features = feature_name) +
     ggplot2::ggtitle("Number of genes with expression ≥3 UMIs")
-  
+
   ggplot2::ggsave(save_path, plot = p, width = 6, height = 4)
-  
+
   return(seurat_obj)
 }
 

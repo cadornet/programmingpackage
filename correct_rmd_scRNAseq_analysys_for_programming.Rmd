@@ -119,4 +119,3 @@ I think that the dataset is enriched in hematopoietic and immune cell types. The
 - **CD34+ and CD34- hematopoietic stem cells**
 This cellular composition is highly indicative of a **hematopoietic tissue**, with both differentiated immune populations and stem/progenitor compartments. The presence of hematopoietic stem cells, along with multipotent progenitors such as CMP (Common Myeloid Progenitors) and GMP (Granulocyte-Macrophage Progenitors), suggests a tissue with active blood formation. As result, I hypothesize that the tissue of origin is most likely **bone marrow**, which contains a diverse mix of immune cells and progenitors, consistent with the annotations and clustering observed in the UMAP.
 
-

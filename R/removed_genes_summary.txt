@@ -1,4 +1,0 @@
-Categories	N_removed_genes
-Ribosomal	99
-Mitochondrial	13
-Pseudogenes	6
