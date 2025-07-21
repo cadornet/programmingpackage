@@ -19,11 +19,11 @@ infer_tissue_origin <- function(seurat_obj, output_file = "tissue_origin_inferen
   cell_types <- seurat_obj$SingleR_label
   cluster_ids <- Idents(seurat_obj)
   
-  # Count frequency of cell types
+
   celltype_counts <- sort(table(cell_types), decreasing = TRUE)
   top_labels <- names(celltype_counts)[1:3]
   
-  # Infer tissue origin
+
   tissue_guess <- "Unknown"
   if (any(grepl("T cell|B cell|NK cell", top_labels))) {
     tissue_guess <- "Blood or lymphoid tissue"
@@ -35,7 +35,7 @@ infer_tissue_origin <- function(seurat_obj, output_file = "tissue_origin_inferen
     tissue_guess <- "Connective or stromal tissue"
   }
   
-  # Compose output
+
   output_text <- paste0(
     "### Tissue Origin Inference\n\n",
     "Top predicted cell types:\n",
@@ -45,11 +45,11 @@ infer_tissue_origin <- function(seurat_obj, output_file = "tissue_origin_inferen
     "This hypothesis is based on the frequency of annotated cell types and the cluster structure observed in the UMAP."
   )
   
-  # Save to file
+
   writeLines(output_text, con = output_file)
   cat("✅ Tissue inference saved to", output_file, "\n")
   
-  # Return structured output
+
   return(list(
     tissue_guess = tissue_guess,
     celltype_counts = celltype_counts,
