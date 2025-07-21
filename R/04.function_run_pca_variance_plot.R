@@ -21,12 +21,12 @@ run_pca_variance_plot <- function(seurat_obj, filename = "pca_20PC.png") {
   seurat_obj <- Seurat::ScaleData(seurat_obj)
   seurat_obj <- Seurat::RunPCA(seurat_obj, features = Seurat::VariableFeatures(seurat_obj))
   
-  # Varianza spiegata
+ 
   pca_var <- seurat_obj[["pca"]]@stdev^2
   pca_var_perc <- pca_var / sum(pca_var) * 100
   pca_var_cumsum <- cumsum(pca_var_perc)
   
-  # Plot
+
   png(filename = filename, width = 800, height = 600)
   barplot(pca_var_perc[1:20],
           names.arg = 1:20,
