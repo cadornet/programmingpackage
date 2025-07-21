@@ -15,16 +15,16 @@ devtools::install_github("cadornet/programmingpackage")
 ## **Features**
 
 - Protein-coding gene filtering via GTF file
-- UMI ≥3 expression summarization
-- Filtering of ribosomal, mitochondrial and pseudogenes
-- PCA and variance plot
-- UMAP embedding and visualization
-- Clustering with SNN and resolution control
-- Cell type annotation via SingleR and Human Primary Cell Atlas
+- [UMI ≥3 expression summarization](https://github.com/cadornet/programmingpackage/blob/main/violinplot_umi3.png?raw=true)
+- [Filtering of ribosomal, mitochondrial and pseudogenes](https://github.com/cadornet/programmingpackage/blob/main/my_summary.txt?raw=true)
+- [PCA and variance plot](https://github.com/cadornet/programmingpackage/blob/main/pca_20PC.png?raw=true)
+- [UMAP embedding and visualization](https://github.com/cadornet/programmingpackage/blob/main/umap_10PC.png?raw=true)
+- [Clustering](https://github.com/cadornet/programmingpackage/blob/main/umap_clusters_res05.png?raw=true)
+- [Cell type annotation via SingleR and Human Primary Cell Atlas](https://github.com/cadornet/programmingpackage/blob/main/umap_celltypes_SingleR.png?raw=true)
 
 
 ## Example Workflow
-
+# suggestion --> A deeper and more detailed explanation of each function including can be found [here](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.html?raw=true)
 
 ```r
 library(programmingpackage)
@@ -71,7 +71,7 @@ A complete step-by-step explanation of the analysis is available [here](https://
 
 ## Docker Support
 This project also includes a ready-to-use Docker Container to ensure reproducility and compatibility
-The **Dockerfile** used to build the container is included in this repository and installs all required system and R dependencies, including:
+The **Dockerfile** used to build the container is included in this repository (or you can find it [here](https://github.com/cadornet/programmingpackage/blob/main/Dockerfile?raw=true)) and installs all required system and R dependencies, including:
 Seurat
 rtracklayer
 SingleR
