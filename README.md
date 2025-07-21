@@ -15,16 +15,16 @@ devtools::install_github("cadornet/programmingpackage")
 ## **Features**
 
 - Protein-coding gene filtering via GTF file
-- [UMI ≥3 expression summarization](https://github.com/cadornet/programmingpackage/blob/main/violinplot_umi3.png?raw=true)
-- [Filtering of ribosomal, mitochondrial and pseudogenes](https://github.com/cadornet/programmingpackage/blob/main/my_summary.txt?raw=true)
-- [PCA and variance plot](https://github.com/cadornet/programmingpackage/blob/main/pca_20PC.png?raw=true)
-- [UMAP embedding and visualization](https://github.com/cadornet/programmingpackage/blob/main/umap_10PC.png?raw=true)
-- [Clustering](https://github.com/cadornet/programmingpackage/blob/main/umap_clusters_res05.png?raw=true)
-- [Cell type annotation via SingleR and Human Primary Cell Atlas](https://github.com/cadornet/programmingpackage/blob/main/umap_celltypes_SingleR.png?raw=true)
+- [UMI ≥3 expression summarization](https://github.com/cadornet/programmingpackage/blob/main/results/violinplot_umi3.png?raw=true)
+- [Filtering of ribosomal, mitochondrial and pseudogenes](https://github.com/cadornet/programmingpackage/blob/main/results/my_summary.txt?raw=true)
+- [PCA and variance plot](https://github.com/cadornet/programmingpackage/blob/main/results/pca_20PC.png?raw=true)
+- [UMAP embedding and visualization](https://github.com/cadornet/programmingpackage/blob/main/results/umap_10PC.png?raw=true)
+- [Clustering](https://github.com/cadornet/programmingpackage/blob/main/results/umap_clusters_res05.png?raw=true)
+- [Cell type annotation via SingleR and Human Primary Cell Atlas](https://github.com/cadornet/programmingpackage/blob/main/results/umap_celltypes_SingleR.png?raw=true)
 
 
 ## Example Workflow
-suggestion --> A deeper and more detailed explanation of each function including can be found [here](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.Rmd)
+suggestion --> A deeper and more detailed explanation of each function including can be found [here](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.Rmd)[html](https://github.com/cadornet/programmingpackage/blob/main/docs/detailed_explanation.html?raw=true)
 
 ```r
 library(programmingpackage)
