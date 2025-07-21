@@ -2,9 +2,6 @@
 .Rhistory
 .RData
 .DS_Store
-*.png
-*.html
-*.txt
 *.gz
 *.mtx
 *.tsv
