@@ -1,4 +1,4 @@
-### Tissue Origin Inference
+## Tissue Origin Inference
 
 Top predicted cell types:
  - T_cells: 4935
@@ -8,6 +8,5 @@ Top predicted cell types:
  - Pre-B_cell_CD34-: 51
 
 Inferred tissue of origin:
-**Unknown**
-
-This hypothesis is based on the frequency of annotated cell types and the cluster structure observed in the UMAP.
+Lymphoid tissue
+This hypothesis is supported by the high abundance of immune-related cell types typically resident or maturing in lymphoid tissues. The dominance of T cells and B cells, together with the presence of NK cells and Pre-B cells, strongly suggests that the sample may derive from lymphoid tissue, such as lymph nodes, spleen, or thymus. The observed UMAP structure—showing well-separated immune cell populations—is consistent with this interpretation.
