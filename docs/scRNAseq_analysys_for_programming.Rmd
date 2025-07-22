@@ -2,9 +2,10 @@
 title: "scRNAseq analysis for Programming Project"
 author: "Chiara Adornetto"
 date: "2025-07-17"
-output: html_document
-editor_options: 
-  markdown: 
+output:
+ html_document: default
+editor_options:
+  markdown:
     wrap: 72
 ---
 ```{r setup, include=FALSE}
@@ -27,15 +28,19 @@ gtf_path <-"C:/Users/chiar/Documents/genomi/Homo_sapiens.GRCh38.111.gtf"
 sc_data <- Read10X(data.dir = data_dir) 
 seurat_obj <- CreateSeuratObject(counts = sc_data)
 
-seurat_obj <- select_protein_coding_genes(seurat_obj, gtf_path)
-
 ```
 ## Step 1: Filter Protein-Coding Genes
 
 Using the Ensembl GTF annotation file, I filtered the dataset to retain only protein-coding genes.This was done using the custom function `select_protein_coding_genes()`included in my package.The filtering ensures that downstream analysis focuses only on protein-coding gene expression profiles.
 
 ```{r step1-filter-pcg} 
-seurat_obj <-select_protein_coding_genes(seurat_obj, gtf_path)
+select_protein_coding_genes <- function(seurat_obj, gtf_path) {
+  genes_gtf <- rtracklayer::import(gtf_path, format = "gtf", feature.type = "gene")
+  protein_coding_genes <- genes_gtf[genes_gtf$gene_biotype == "protein_coding"]
+  keep_gene_names <- protein_coding_genes$gene_name
+  filtered_seurat <- subset(seurat_obj, features = keep_gene_names)
+  return(filtered_seurat)
+}
 
 ```
 ## Step 2: Gene Expression Summary
@@ -43,8 +48,17 @@ seurat_obj <-select_protein_coding_genes(seurat_obj, gtf_path)
 To assess the richness of gene expression per cell, I calculated the number of genes with expression ≥3 UMIs for each cell.This information was stored as a new metadata column (`n_genes_≥3UMI`)in the Seurat object.I visualized the distribution across cells using a violin plot.
 
 ```{r step2-expression-summary, echo=TRUE} 
-seurat_obj <-summarize_expression_umi3_exact(seurat_obj)
-knitr::include_graphics("violinplot_umi3.png")
+
+summarize_expression_umi3_exact <- function(seurat_obj,
+  feature_name = "n_genes_or_more_3UMI") {
+  counts <- GetAssayData(seurat_obj, layer = "counts")
+  counts_mat <- as.matrix(counts)
+  seurat_obj[[feature_name]] <- colSums(counts_mat >= 3) 
+  VlnPlot(seurat_obj, features = feature_name) + 
+    ggtitle("Genes with ≥3 UMI per cell")
+}
+
+knitr::include_graphics("C:/Users/chiar/Documents/programmingpackage/results/violinplot_umi3.png")
 
 ```
 ## Step 3: Filtering of Ribosomal, Mitochondrial and Pseudogenes
@@ -57,8 +71,16 @@ In this step, I removed unwanted gene categories from the dataset:
 The filtering ensures that low-complexity or confounding gene types are excluded from downstream analysis. The list of removed genes and a summary table were saved in two different files.
 
 ```{r step3-filtering, echo=TRUE} 
-seurat_obj <-filter_unwanted_genes(seurat_obj)
-removed_table <- read.table("removed_genes_summary.txt", header = TRUE, sep= "\t") 
+filter_unwanted_genes <- function(seurat_obj) {
+  genes <- rownames(seurat_obj)
+  genes_to_remove <- unique(c( 
+    grep("^RPS|^RPL", genes, value = TRUE),
+    grep("^MT-", genes, value = TRUE),
+    grep("RPS.*P|RPL.*P", genes, value = TRUE)
+  ))
+  subset(seurat_obj, features = setdiff(genes, genes_to_remove))
+}
+removed_table <- read.table("C:/Users/chiar/Documents/programmingpackage/results/my_summary.txt", header = TRUE, sep= "\t") 
 knitr::kable(removed_table, caption = "Number of removed genes by category")
 
 ```
@@ -67,11 +89,20 @@ knitr::kable(removed_table, caption = "Number of removed genes by category")
 I performed dimensionality reduction using PCA to capture the major sources of variation in the dataset.The first 20 principal components (PCs) were evaluated in terms of the variance they explain.We visualized this using a barplot.
 
 ```{r step4-pca, echo=TRUE} 
-result_pca <- run_pca_variance_plot(seurat_obj)
-seurat_obj <- result_pca$seurat_obj
-
-```{r show-pca, echo=FALSE}
-knitr::include_graphics("pca_20PC.png")
+run_pca_variance_plot <- function(seurat_obj) {
+  seurat_obj <- NormalizeData(seurat_obj)
+  seurat_obj <- FindVariableFeatures(seurat_obj)
+  seurat_obj <- ScaleData(seurat_obj)
+  seurat_obj <- RunPCA(seurat_obj, features = VariableFeatures(seurat_obj))
+  pca_var <- seurat_obj[["pca"]]@stdev^2
+  pca_perc <- pca_var / sum(pca_var) * 100
+  barplot(pca_perc[1:20],
+          names.arg = 1:20,
+          xlab = "PC",
+          ylab = "% Variance explained",
+          main = "PCA - explained variance of the first 20 PCs")
+}
+knitr::include_graphics("C:/Users/chiar/Documents/programmingpackage/results/pca_20PC.png")
 
 ```
 ## Step 5: UMAP Visualization
@@ -79,9 +110,12 @@ knitr::include_graphics("pca_20PC.png")
 I applied UMAP for visualization of the dataset in a low-dimensional space.The embedding was computed using the first 10 principal components.The resulting 2D projection provides an intuitive representation of cell relationships.
 
 ```{r step5-umap, echo=TRUE}
-result_umap <- run_umap_plot(seurat_obj, dims = 1:10)
-seurat_obj <- result_umap$seurat_obj
-knitr::include_graphics("umap_10PC.png")
+ run_umap_plot <- function(seurat_obj, dims = 1:10) {
+  seurat_obj <- RunUMAP(seurat_obj, dims = dims)
+  DimPlot(seurat_obj, reduction = "umap") +
+    ggtitle(sprintf("UMAP based on first %d PCA components", max(dims)))
+}
+knitr::include_graphics("C:/Users/chiar/Documents/programmingpackage/results/umap_10PC.png")
 
 ```
 ## Step 6: Clustering
@@ -89,9 +123,13 @@ I performed clustering on the dataset to identify groups of transcriptionally si
 This was done using a shared nearest neighbor (SNN) graph approach applied to the PCA space (dimensions 1 to 10). I used a resolution of 0.5. The resulting clusters were visualized on the UMAP embedding.
 
 ```{r step6-clustering, echo=TRUE}
-result_cluster <- run_clustering(seurat_obj, dims = 1:10, resolution = 0.5)
-seurat_obj <- result_cluster$seurat_obj
-knitr::include_graphics("umap_clusters_res05.png")
+run_clustering <- function(seurat_obj, dims = 1:10, resolution = 0.5) {
+  seurat_obj <- FindNeighbors(seurat_obj, dims = dims)
+  seurat_obj <- FindClusters(seurat_obj, resolution = resolution)
+  DimPlot(seurat_obj, reduction = "umap", label = TRUE) +
+    ggtitle(sprintf("Clusters (resolution %.2f)", resolution))
+}
+knitr::include_graphics("C:/Users/chiar/Documents/programmingpackage/results/umap_clusters_res05.png")
 
 ```
 ## Step 7: Cell Type Annotation using SingleR
@@ -101,17 +139,23 @@ The predicted cell type labels were stored in the metadata and visualized on the
 I also created a contingency table showing the correspondence between clusters and predicted cell types.
 
 ```{r step7-singleR}
-result_annot <- annotate_cells_singleR(seurat_obj)
-seurat_obj <- result_annot$seurat_obj
-knitr::include_graphics("umap_celltypes_SingleR.png")
+annotate_cells_singleR <- function(seurat_obj) {
+  expr_matrix <- GetAssayData(seurat_obj, slot = "data")
+  ref <- celldex::HumanPrimaryCellAtlasData()
+  singleR_labels <- SingleR(test = expr_matrix,
+                            ref = ref,
+                            labels = ref$label.main)$labels
+  seurat_obj$SingleR_label <- singleR_labels
+  DimPlot(seurat_obj, group.by = "SingleR_label", label = TRUE) +
+    ggtitle("Cell type annotations (SingleR)")
+}
+knitr::include_graphics("C:/Users/chiar/Documents/programmingpackage/results/umap_celltypes_SingleR.png")
 
 ```
 ## Step 8: Tissue Origin Inference
 This function estimates the tissue of origin of the sample by analyzing the most represented annotated
-cell types. It uses regular expressions to detect characteristic patterns within the top three cell types and returns a biologically
- plausible tissue classification.
- ```{r step8-interfer_tissue_origin)
-
+cell types. It uses regular expressions to detect characteristic patterns within the top three cell types and returns a biologically plausible tissue classification.
+```{r step 8-tissue-inference}
 infer_tissue_origin <- function(seurat_obj) {
   cell_types <- seurat_obj$SingleR_label
   celltype_counts <- sort(table(cell_types), decreasing = TRUE)
@@ -128,5 +172,9 @@ infer_tissue_origin <- function(seurat_obj) {
   }
 message("Inferred tissue of origin: ", tissue_guess)
 }
+result=read.table("C:/Users/chiar/Documents/programmingpackage/results/tissue_origin_inference_summary.txt", header = TRUE, sep= "\t") 
+knitr::kable(result, caption = "Inferred tissue of origin")
+ 
 ```
+
 
