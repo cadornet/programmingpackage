@@ -61,10 +61,10 @@ tissue_result <- infer_tissue_origin(annot_result$seurat_obj)
 
 # View the guessed tissue origin
 cat(tissue_result$tissue_guess)
-
-# The full interpretation is saved in:
-# tissue_origin_inference_summary.txt
 ```
+# The full interpretation is saved in:
+[tissue_origin_inference_summary.txt](https://github.com/cadornet/programmingpackage/blob/main/vignettes/images/tissue_origin_inference_summary.txt)
+
 
 ## Vignette
 A complete step-by-step explanation of the analysis is available [here](https://cadornet.github.io/programmingpackage/correct_vignette_analysis_steps.html).
