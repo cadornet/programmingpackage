@@ -1,0 +1,13 @@
+### Tissue Origin Inference
+
+Top predicted cell types:
+ - T_cells: 4935
+ - Monocyte: 3805
+ - B_cell: 852
+ - NK_cell: 473
+ - Pre-B_cell_CD34-: 51
+
+Inferred tissue of origin:
+**Unknown**
+
+This hypothesis is based on the frequency of annotated cell types and the cluster structure observed in the UMAP.
