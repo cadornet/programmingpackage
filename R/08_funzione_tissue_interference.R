@@ -1,4 +1,4 @@
-#' Infer the tissue of origin based on SingleR annotations
+#' Infer the tissue of origin based on SingleR annotations.
 #'
 #' This function analyzes the most abundant cell types predicted by SingleR
 #' and proposes a tissue of origin based on common marker patterns.
