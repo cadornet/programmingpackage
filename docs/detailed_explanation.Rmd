@@ -268,7 +268,7 @@ function his function analyzes the most abundant cell types predicted by SingleR
 #' @export
 #defines the function with seuratobj and the outputfile
 infer_tissue_origin <- function(seurat_obj, output_file = "tissue_origin_inference_summary.txt") {
-  # Extract cell types and cluster IDs
+  # Extract cell types and cluster IDs which indicates which cluster each cell has been assigned to.
   cell_types <- seurat_obj$SingleR_label
   cluster_ids <- Idents(seurat_obj)
   #extract cellular type predicted by singleR from the singleR column of seuratobj
